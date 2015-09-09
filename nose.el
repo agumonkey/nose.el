@@ -139,6 +139,24 @@ For more details: http://pswinkels.blogspot.ca/2010/04/debugging-python-code-fro
   (interactive)
   (nosetests-one t))
 
+(defun inner-testable ()
+  "Matches the non top-level definition above point.
+Inner as non visible outside the module."
+  (save-excursion
+    (re-search-backward
+     "^ \\{0,4\\}\\(class\\|def\\)[ \t]+\\([a-zA-Z0-9_]+\\)" nil t)
+    (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
+
+(defun outer-testable ()
+  "Matches the top-level definition above point.
+Outer as visible outside the module."
+  (save-excursion
+    (re-search-backward
+     "^\\(class\\|def\\)[ \t]+\\([a-zA-Z0-9_]+\\)" nil t)
+    (cons
+     (buffer-substring-no-properties (match-beginning 1) (match-end 1))
+     (buffer-substring-no-properties (match-beginning 2) (match-end 2)))))
+
 (defun nose-py-testable ()
   (let* ((inner-obj (inner-testable))
          (outer (outer-testable))
@@ -148,23 +166,6 @@ For more details: http://pswinkels.blogspot.ca/2010/04/debugging-python-code-fro
     (cond ((equal outer-def "def") outer-obj)
           ((equal inner-obj outer-obj) outer-obj)
           (t (format "%s.%s" outer-obj inner-obj)))))
-
-(defun inner-testable ()
-  (save-excursion
-    (re-search-backward
-     "^ \\{0,4\\}\\(class\\|def\\)[ \t]+\\([a-zA-Z0-9_]+\\)" nil t)
-    (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
-
-(defun outer-testable ()
-  (save-excursion
-    (re-search-backward
-     "^\\(class\\|def\\)[ \t]+\\([a-zA-Z0-9_]+\\)" nil t)
-    (let ((result
-            (buffer-substring-no-properties (match-beginning 2) (match-end 2))))
-
-      (cons
-       (buffer-substring-no-properties (match-beginning 1) (match-end 1))
-       result))))
 
 (defun nose-find-project-root (&optional dirname)
   (let ((dn
